@@ -1,8 +1,7 @@
 import numpy as np
 from skimage import io
-from scipy.ndimage import gaussian_filter
 from keras.models import load_model
-import segmentation_models_3D as sm
+
 
 
 def extract_patches(volume, patch_size=96, overlap=32):
@@ -71,7 +70,7 @@ def rebuild_volume(patches, coords, volume_shape, patch_size=96, overlap=32, sig
 
 def process_and_predict(volume, model, patch_size=96, overlap=32, sigma=12):
     # Pad the volume if necessary
-    model = load_model(model1, compile = False)
+    model = load_model(model, compile = False)
     depth, height, width = volume.shape
     pad_depth = (patch_size - depth % patch_size) % patch_size
     pad_height = (patch_size - height % patch_size) % patch_size
@@ -112,8 +111,8 @@ def process_and_predict(volume, model, patch_size=96, overlap=32, sigma=12):
     
     return predicted_volume
 
-# Example usage
-model1 = '/p/project1/claimd/Andre/Aimy/3DVNet_VNet3D_Cal_OF_MPL_fuse_dataset_-0.8329-100.keras'  # Load your trained model here
-input_volume = io.imread('/p/project1/claimd/Andre/Aimy/Dataset/Sigracet28bc.tif')
-predicted_volume = process_and_predict(input_volume, model1)
-io.imsave('./Dataset/predicted_volume_Sigracet28bc_cal_fuse_aug_vnet.tif', predicted_volume.astype(np.uint8))
+# # Example usage
+# model1 = '/p/project1/claimd/Andre/Aimy/3DVNet_VNet3D_Cal_OF_MPL_fuse_dataset_-0.8329-100.keras'  # Load your trained model here
+# input_volume = io.imread('/p/project1/claimd/Andre/Aimy/Dataset/Sigracet28bc.tif')
+# predicted_volume = process_and_predict(input_volume, model1)
+# io.imsave('./Dataset/predicted_volume_Sigracet28bc_cal_fuse_aug_vnet.tif', predicted_volume.astype(np.uint8))

@@ -142,10 +142,10 @@ def process_and_predict_multi(volume, model='HRNET', patch_size=96, overlap=32, 
     
     return predicted_volume
 
-# Example usage
-models_path = ['./3DVNet_VNet3D_fusev2_multi_noaug_-0.8259-73.keras','./HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras', './resnext101_UNET_fusev2_dataset_noaug_-0.8191-97.keras', './SwinUnet_SwinUnet_fusev2_dataset_noaug_-0.7887-82.keras']
+# # Example usage
+# models_path = ['./3DVNet_VNet3D_fusev2_multi_noaug_-0.8259-73.keras','./HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras', './resnext101_UNET_fusev2_dataset_noaug_-0.8191-97.keras', './SwinUnet_SwinUnet_fusev2_dataset_noaug_-0.7887-82.keras']
 
-for model in models_path:
-    input_volume = io.imread('/p/project1/claimd/Andre/Aimy/Dataset/cal_fusev2/test/Toray1202.tif')
-    predicted_volume = process_and_predict_multi(input_volume, model)
-    io.imsave(f'./39bb2_{os.path.basename(model)}.tif', predicted_volume.astype(np.uint8))
+# for model in models_path:
+#     input_volume = io.imread('/p/project1/claimd/Andre/Aimy/Dataset/cal_fusev2/test/Toray1202.tif')
+#     predicted_volume = process_and_predict_multi(input_volume, model)
+#     io.imsave(f'./39bb2_{os.path.basename(model)}.tif', predicted_volume.astype(np.uint8))

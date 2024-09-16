@@ -653,67 +653,67 @@ def tortuosity_simulation(binary_volume, csv_file):
         writer.writerow(['tortuosity', tortuosity])
     return tortuosity
 
-######## TEST FUNCTIONS  ########
-filepath = 'C:/Users/a.colliard/Downloads/39bb2_HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras.tif'
-#'C:/Users/a.colliard/Desktop/aimys_project/CT_crops/new/totake/Toray1202.tif'
-#'C:/Users/a.colliard/Downloads/toray1202_fusev2_HRNET_HRNET_fusev2_dataset_noaug_-0.6439-55.keras.tif'
+# ######## TEST FUNCTIONS  ########
+# filepath = 'C:/Users/a.colliard/Downloads/39bb2_HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras.tif'
+# #'C:/Users/a.colliard/Desktop/aimys_project/CT_crops/new/totake/Toray1202.tif'
+# #'C:/Users/a.colliard/Downloads/toray1202_fusev2_HRNET_HRNET_fusev2_dataset_noaug_-0.6439-55.keras.tif'
 
-csv_file = './functions/csv_test.csv'
-binary_image_3d = open_tiff_stack(filepath)
-output_csv_path = './functions/test_csv.csv'
-# Calculate porosity, psd and binary img
-porosity,results, avg_pore, sd = calculate_psd(binary_image_3d, csv_file, voxel_size=5)
+# csv_file = './functions/csv_test.csv'
+# binary_image_3d = open_tiff_stack(filepath)
+# output_csv_path = './functions/test_csv.csv'
+# # Calculate porosity, psd and binary img
+# porosity,results, avg_pore, sd = calculate_psd(binary_image_3d, csv_file, voxel_size=5)
 
-# Calculate surface roughness
-Ra, Rq = calculate_surface_roughness_from_surface(binary_image_3d)
-#MPL_roughness_calculation(binary_image_3d, mpl=2)
-print(f"Arithmetic Mean Roughness (Ra): {Ra}")
-print(f"Root Mean Square Roughness (Rq): {Rq}")
-# Example usage:
-Ra, Rq, Ra_std_dev, Ra_CoV, avg_thickness = MPL_intrusion_roughness(binary_image_3d, csv_file, mpl=2, voxel_size=5)
-print(f"Global Roughness Ra: {Ra}, Rq: {Rq}")
-print(f"Standard Deviation of Local Ra: {Ra_std_dev}")
-print(f"Coefficient of Variation of Local Ra: {Ra_CoV}")
-print(f"Average Thickness: {avg_thickness}")
+# # Calculate surface roughness
+# Ra, Rq = calculate_surface_roughness_from_surface(binary_image_3d)
+# #MPL_roughness_calculation(binary_image_3d, mpl=2)
+# print(f"Arithmetic Mean Roughness (Ra): {Ra}")
+# print(f"Root Mean Square Roughness (Rq): {Rq}")
+# # Example usage:
+# Ra, Rq, Ra_std_dev, Ra_CoV, avg_thickness = MPL_intrusion_roughness(binary_image_3d, csv_file, mpl=2, voxel_size=5)
+# print(f"Global Roughness Ra: {Ra}, Rq: {Rq}")
+# print(f"Standard Deviation of Local Ra: {Ra_std_dev}")
+# print(f"Coefficient of Variation of Local Ra: {Ra_CoV}")
+# print(f"Average Thickness: {avg_thickness}")
 
-# Calculate tortuosity
-tortuosity = 1.85
-#tortuosity_simulation(binary_image_3d, csv_file)
+# # Calculate tortuosity
+# tortuosity = 1.85
+# #tortuosity_simulation(binary_image_3d, csv_file)
 
-# Estimate permeability
-ssa = calculate_ssa(binary_image_3d)
-# print(ssa)
-porosity = 0.73
-# #results = {'bin_centers':1, 'pdf':1}
-permeability = estimate_permeability(porosity, csv_file, ssa, tortuosity)
-print(f'Permeability: {permeability}')
+# # Estimate permeability
+# ssa = calculate_ssa(binary_image_3d)
+# # print(ssa)
+# porosity = 0.73
+# # #results = {'bin_centers':1, 'pdf':1}
+# permeability = estimate_permeability(porosity, csv_file, ssa, tortuosity)
+# print(f'Permeability: {permeability}')
 
-#Calculacte solid surface ratio
-calculate_solid_surface_ratio(binary_image_3d, csv_file, gdl=1, side='bottom')
+# #Calculacte solid surface ratio
+# calculate_solid_surface_ratio(binary_image_3d, csv_file, gdl=1, side='bottom')
 
-#Calculate MPL and GDL thickness
-MPL_GDL_thickness(binary_image_3d, csv_file, axis=0, mpl=2, gdl=1)
+# #Calculate MPL and GDL thickness
+# MPL_GDL_thickness(binary_image_3d, csv_file, axis=0, mpl=2, gdl=1)
 
-#Calculate MPL crack analysis
-crack_ratio, crack_count, crack_labels, crack_sizes, slice_image = MPL_crack_analysis(binary_image_3d, csv_file)
-print(f"Crack Ratio: {crack_ratio}")
-print(f"Crack Count: {crack_count}")
-print(f"Crack Sizes: {crack_sizes}")
-plot_crack_labels(slice_image, crack_labels)
+# #Calculate MPL crack analysis
+# crack_ratio, crack_count, crack_labels, crack_sizes, slice_image = MPL_crack_analysis(binary_image_3d, csv_file)
+# print(f"Crack Ratio: {crack_ratio}")
+# print(f"Crack Count: {crack_count}")
+# print(f"Crack Sizes: {crack_sizes}")
+# plot_crack_labels(slice_image, crack_labels)
 
-# GDL layer PSD calculation
-#layer_pore_size_distribution(binary_image_3d, 1) #Needs furhter logic enhancement
+# # GDL layer PSD calculation
+# #layer_pore_size_distribution(binary_image_3d, 1) #Needs furhter logic enhancement
 
-# MPL heatmap creation
-MPL_heatmap(binary_image_3d,2)
+# # MPL heatmap creation
+# MPL_heatmap(binary_image_3d,2)
 
-# Calculate fiber touching MPL voxels
-MPL_count_touching_voxels(binary_image_3d, csv_file, mpl_class=1, fiber_class=2)
+# # Calculate fiber touching MPL voxels
+# MPL_count_touching_voxels(binary_image_3d, csv_file, mpl_class=1, fiber_class=2)
 
-# Calculate permeability via simulation
-#calculate_permeability(binary_image_3d) # Still need to be repaired (Not sure which parameters are relevant)
+# # Calculate permeability via simulation
+# #calculate_permeability(binary_image_3d) # Still need to be repaired (Not sure which parameters are relevant)
 
-# save_results_to_csv(results, porosity, avg_pore, sd, Ra, Rq, permeability, tortuosity, output_csv_path)
+# # save_results_to_csv(results, porosity, avg_pore, sd, Ra, Rq, permeability, tortuosity, output_csv_path)
 
 
 

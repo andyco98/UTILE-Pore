@@ -96,7 +96,7 @@ def process_and_predict_multi(volume, model='HRNET', patch_size=96, overlap=32, 
         tensorflow.config.optimizer.set_experimental_options({"auto_mixed_precision": True})
         strategy = tensorflow.distribute.MirroredStrategy()
         with strategy.scope():
-            #model1 = build_swin_unet(input_shape=(96, 96, 96, 3), num_classes=3, window_size=7, num_heads=4, dropout_rate=0.1)
+            model1 = build_swin_unet(input_shape=(96, 96, 96, 3), num_classes=3, window_size=7, num_heads=4, dropout_rate=0.1)
             model1.load_weights(model)
     else:    
         model1 = load_model(model, compile = False)

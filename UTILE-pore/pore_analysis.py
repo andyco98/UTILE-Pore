@@ -116,7 +116,7 @@ def open_tiff_stack(filepath):
 def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_size parameter with a default of 5 microns
 
     # Ensure the image is binary
-    binary_image_3d = np.where(image_3d == 0, 1, 0)
+    binary_image_3d = np.where(filepath == 0, 1, 0)
     porosity = ps.metrics.porosity(binary_image_3d)
     print(f"Porosity: {porosity}")
 
@@ -148,7 +148,7 @@ def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_s
     plt.savefig(f'./{case_name}/psd_plot.png')
     plt.close(fig)  # Close the figure to avoid display issues in scripts
 
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity
@@ -204,7 +204,7 @@ def estimate_permeability(porosity, csv_file, specific_surface_area, tortuosity=
     # Kozeny-Carman equation for permeability
     permeability = (porosity**3) / (k * tortuosity**2 * (1 - porosity)**2 * specific_surface_area**2)
     
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity
@@ -227,7 +227,7 @@ def calculate_solid_surface_ratio(binary_image_3d,csv_file, side,gdl=1):
     solid_ratio = white_px / total_px
     print('Solid surface ratio:', solid_ratio)
 
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity
@@ -242,7 +242,7 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         return thickness
     else:
         # Find the positions of the mpl in the 3D volume
-        mpl_mask = binary_image_3d == mpl
+        mpl_mask = volume == mpl
         #print(mpl_mask.shape)
         
         # Sum along the height and width (axes 1 and 2) to get the number of MPL voxels per slice (along the Z-axis)
@@ -256,12 +256,12 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         if len(non_zero_slices) == 0:
             raise ValueError("The specified MPL class is not present in the volume.")
         
-        mpl_volume = np.where(binary_image_3d==2, 1,0)
+        mpl_volume = np.where(volume==2, 1,0)
         mpl_thickness = np.sum(mpl_volume, axis=0)  # Sum along the Z-axis
         mpl_avg_thickness = int(np.mean(mpl_thickness))
         print('MPL avg Thickness',mpl_avg_thickness)       
 
-        gdl_volume = np.where(binary_image_3d==1, 1,0)
+        gdl_volume = np.where(volume==1, 1,0)
         gdl_thickness = np.sum(gdl_volume, axis=0)  # Sum along the Z-axis
         gdl_avg_thickness = int(np.mean(gdl_thickness))
         print('GDL avg Thickness',gdl_avg_thickness)
@@ -270,7 +270,7 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         mpl_thickness = (non_zero_slices[-1] - non_zero_slices[0] + 1)* voxel_size
 
         # Check GDL layer thickness
-        gdl_mask = binary_image_3d == gdl
+        gdl_mask = volume == gdl
         
         # Sum along the height and width (axes 1 and 2) to get the number of GDL voxels per slice (along the Z-axis)
         thickness_along_z = np.sum(gdl_mask, axis=(1, 2))
@@ -285,7 +285,7 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         # Calculate GDL thickness as the number of slices where the layer is present
         max_gdl_thickness = (non_zero_slices[-1] - non_zero_slices[0] + 1)* voxel_size
         print('Max GDL Thickness', max_gdl_thickness, 'Max MPL Thickness', mpl_thickness)
-        with open(csv_file, 'w', newline='') as csvfile:
+        with open(csv_file, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             
             # Write porosity
@@ -353,7 +353,7 @@ def MPL_crack_analysis(mpl_layer, case_name, csv_file, mpl=2, slice_idx=0, from_
     plt.savefig(f'./{case_name}/crack_size_distirbution.png')
     plt.close()
 
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity
@@ -362,7 +362,7 @@ def MPL_crack_analysis(mpl_layer, case_name, csv_file, mpl=2, slice_idx=0, from_
         writer.writerow(['Crack_count', crack_count])   
     return crack_ratio, crack_count, crack_labels, crack_sizes, slice_image
 
-def plot_crack_labels(slice_image, crack_labels):
+def plot_crack_labels(slice_image, case_name, crack_labels):
     """
     Plots the crack labels on the slice for visualization.
     """
@@ -538,7 +538,7 @@ def MPL_intrusion_roughness(volume, csv_file, mpl, voxel_size=5, region_size=10,
     Ra_std_dev = np.std(local_Ra_values)
     Ra_coefficient_of_variation = Ra_std_dev / Ra  # Coefficient of variation
     
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity
@@ -577,7 +577,7 @@ def MPL_count_touching_voxels(volume, csv_file, mpl_class=2, fiber_class=1):
     touching_voxel_count = np.sum(touching_voxels)
 
     print('MPL voxels touching GDL: ', touching_voxel_count)
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity
@@ -645,7 +645,7 @@ def tortuosity_simulation(binary_volume, csv_file):
     tortuosity = ps.simulations.tortuosity_fd(binary_volume, axis=0) #For toray120 1.85 took 6 h
     print("Tortuosity:", tortuosity)
 
-    with open(csv_file, 'w', newline='') as csvfile:
+    with open(csv_file, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # Write porosity

@@ -1,5 +1,12 @@
 import numpy as np
-from tensorflow.keras.models import load_model
+import tensorflow
+from tensorflow.keras import mixed_precision
+from skimage import io
+from scipy.ndimage import gaussian_filter
+from keras.models import load_model
+import segmentation_models_3D as sm
+import os
+from t3DSwinUnet import *
 
 def extract_patches(volume, patch_size=96, overlap=32):
     patches = []
@@ -81,8 +88,18 @@ def rebuild_volume(patches, coords, volume_shape, patch_size=96, overlap=32, sig
 
 def process_and_predict_multi(volume, model='HRNET', patch_size=96, overlap=32, sigma=12):
     # Pad the volume if necessary
-   
-    model1 = load_model(model, compile = False)
+    if 'Swin' in model:
+        # Enable mixed precision
+        mixed_precision.set_global_policy('mixed_float16')
+        
+        # Enable AMP
+        tensorflow.config.optimizer.set_experimental_options({"auto_mixed_precision": True})
+        strategy = tensorflow.distribute.MirroredStrategy()
+        with strategy.scope():
+            #model1 = build_swin_unet(input_shape=(96, 96, 96, 3), num_classes=3, window_size=7, num_heads=4, dropout_rate=0.1)
+            model1.load_weights(model)
+    else:    
+        model1 = load_model(model, compile = False)
     depth, height, width = volume.shape
     pad_depth = (patch_size - depth % patch_size) % patch_size
     pad_height = (patch_size - height % patch_size) % patch_size
@@ -103,7 +120,11 @@ def process_and_predict_multi(volume, model='HRNET', patch_size=96, overlap=32, 
         #print(patch.shape)
         patch = np.stack((patch,)*3, axis=-1).astype(np.float32) / 255.0
 
-    
+        if 'resnext' in model:
+        #print(patch.shape)
+            # Process input ##
+            process_input = sm.get_preprocessing('resnext101')
+            patch = process_input(patch)
         patch = np.expand_dims(patch, axis=0)
         #print(patch.shape)
         prediction = model1.predict(patch)

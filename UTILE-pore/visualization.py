@@ -25,7 +25,7 @@ def visualize_volume(volume, case_name, capture = False):
     opacity_transfer_function = vtk.vtkPiecewiseFunction()
     opacity_transfer_function.AddPoint(0, 0.01)  # Class 2 (now set to 0) is fully transparent
     opacity_transfer_function.AddPoint(1, 1.0)  # Class 1 is fully visible
-    opacity_transfer_function.AddPoint(2, 0.2)  # Other classes are semi-transparent
+    opacity_transfer_function.AddPoint(2, 1.0)  # Other classes are semi-transparent
     opacity_transfer_function.AddPoint(3, 0.2)  # Add more points as needed
     opacity_transfer_function.AddPoint(5, 0.0)  # Add more points as needed
 

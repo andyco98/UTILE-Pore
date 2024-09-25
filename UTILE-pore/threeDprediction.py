@@ -107,7 +107,7 @@ def process_and_predict(volume, model, patch_size=96, overlap=32, sigma=12):
     predicted_volume = predicted_volume[:depth, :height, :width]
     
     # Threshold the predicted volume for binary segmentation
-    predicted_volume = (predicted_volume > 0.5).astype(np.uint8)*255
+    predicted_volume = (predicted_volume > 0.5).astype(np.uint8)
     
     return predicted_volume
 

@@ -604,6 +604,7 @@ def snow_network_from_image(binary_image, case_name):
     Create a network from the binary image using the SNOW algorithm in PoreSpy
     and OpenPNM's network creation method for PoreSpy.
     """
+    binary_image = np.where(binary_image == 0, 1, 0)
     # Use PoreSpy's SNOW algorithm to analyze the image
     snow_output = ps.networks.snow2(binary_image)
         # Save to file

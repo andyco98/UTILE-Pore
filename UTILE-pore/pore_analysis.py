@@ -10,6 +10,10 @@ from scipy.stats import variation
 from scipy.ndimage import binary_dilation
 from visualization import *
 import openpnm as op
+from skimage import io
+import pickle
+#TODO 
+# 1- repair intrusion calculation and check that is correctl, applied to the rough surface
 
 def crop_3d_array(array, target_shape):
     """
@@ -113,11 +117,20 @@ def open_tiff_stack(filepath):
         print(images.shape)
     return images
 
-def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_size parameter with a default of 5 microns
+def calculate_porosity(binary_stack):
+    total_pixels = binary_stack.size
+    white_pixels = np.sum(binary_stack)
+    black_pixels = total_pixels - white_pixels
+    porosity = black_pixels / total_pixels
+    return porosity
 
+def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_size parameter with a default of 5 microns
+    filepath = filepath[filepath == 2] = 0
+    porosity = calculate_porosity(filepath)
+    #print(f"Porosity wb: {porosity}")
     # Ensure the image is binary
     binary_image_3d = np.where(filepath == 0, 1, 0)
-    porosity = ps.metrics.porosity(binary_image_3d)
+    #porosity = ps.metrics.porosity(binary_image_3d)
     print(f"Porosity: {porosity}")
 
     sizes = ps.filters.porosimetry(im=binary_image_3d)
@@ -586,21 +599,23 @@ def MPL_count_touching_voxels(volume, csv_file, mpl_class=2, fiber_class=1):
 
     return touching_voxel_count
 
-def create_network_from_image(binary_image):
+def snow_network_from_image(binary_image, case_name):
     """
     Create a network from the binary image using the SNOW algorithm in PoreSpy
     and OpenPNM's network creation method for PoreSpy.
     """
     # Use PoreSpy's SNOW algorithm to analyze the image
     snow_output = ps.networks.snow2(binary_image)
-
+        # Save to file
+    with open(f'./{case_name}/snow_{case_name}.pkl', 'wb') as f:
+        pickle.dump(snow_output, f)
+    print(f"snow_output saved to ./{case_name}/snow_{case_name}.pkl")
     # Create an OpenPNM project
-    proj = op.Project()
+    #proj = op.Project()
 
     # Create a network from the PoreSpy output
-    network = op.io.network_from_porespy(snow_output)
-
-    return network
+    #network = op.io.network_from_porespy(snow_output)
+    return
 
 def setup_permeability_simulation(network):
     """
@@ -634,7 +649,7 @@ def calculate_permeability(volume):
     binary_image = np.where(segmented_volume == 2, 1, 0)
     
     # Create the pore network
-    network = create_network_from_image(binary_image)
+    #network = create_network_from_image(binary_image)
     
     # Run permeability simulation
     permeability = setup_permeability_simulation(network)
@@ -655,6 +670,9 @@ def tortuosity_simulation(binary_volume, csv_file):
 
 # ######## TEST FUNCTIONS  ########
 # filepath = 'C:/Users/a.colliard/Downloads/39bb2_HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras.tif'
+# predicted_volume = io.imread(filepath)
+# case_name = 'example1'
+# snow_network_from_image(predicted_volume, case_name)
 # #'C:/Users/a.colliard/Desktop/aimys_project/CT_crops/new/totake/Toray1202.tif'
 # #'C:/Users/a.colliard/Downloads/toray1202_fusev2_HRNET_HRNET_fusev2_dataset_noaug_-0.6439-55.keras.tif'
 

@@ -251,7 +251,7 @@ def calculate_solid_surface_ratio(binary_image_3d,csv_file, side,gdl=1):
 
 def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
     if len(np.unique(volume)) == 2:
-        thickness = volume[0]
+        thickness = len(volume[0])
         print('GDL thickness: ', thickness)
         return thickness
     else:

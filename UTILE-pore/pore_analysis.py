@@ -125,7 +125,8 @@ def calculate_porosity(binary_stack):
     return porosity
 
 def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_size parameter with a default of 5 microns
-    filepath = filepath[filepath == 2] = 0
+    if len(np.unique(filepath)) > 2:
+        filepath = filepath[filepath == 2] = 0
     porosity = calculate_porosity(filepath)
     #print(f"Porosity wb: {porosity}")
     # Ensure the image is binary

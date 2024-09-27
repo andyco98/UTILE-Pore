@@ -12,8 +12,9 @@ from visualization import *
 import openpnm as op
 from skimage import io
 import pickle
+
+
 #TODO 
-# 1- repair intrusion calculation and check that is correctl, applied to the rough surface
 
 def crop_3d_array(array, target_shape):
     """
@@ -126,7 +127,7 @@ def calculate_porosity(binary_stack):
 
 def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_size parameter with a default of 5 microns
     if len(np.unique(filepath)) > 2:
-        filepath = filepath[filepath == 2] = 0
+       filepath[filepath == 2] = 0
     porosity = calculate_porosity(filepath)
     #print(f"Porosity wb: {porosity}")
     # Ensure the image is binary
@@ -184,9 +185,12 @@ def calculate_ssa(binary_volume, voxel_size=5):
     Returns:
     - ssa: The specific surface area, in units of surface area per volume.
     """
+    # Convert the GDL volume into binary (pore = 1, solid = 0)
+    binary_volume = np.where(binary_volume == 0, 1, 0)
     # Ensure the binary volume is in the correct format
     binary_volume = np.asarray(binary_volume).astype(bool)
-    verts, faces, n, v = marching_cubes(binary_volume, level=0, spacing=(voxel_size, voxel_size, voxel_size))
+
+    verts, faces, n, v = marching_cubes(binary_volume, level=0.5, spacing=(voxel_size, voxel_size, voxel_size))
     # Surface area estimation using marching cubes algorithm from scikit-image
     #verts, faces, _, _ = marching_cubes(binary_volume, level=0, spacing=(voxel_size, voxel_size, voxel_size))
     
@@ -194,13 +198,14 @@ def calculate_ssa(binary_volume, voxel_size=5):
     surface_area = ps.metrics.mesh_surface_area(verts = verts, faces = faces)
 
     # Calculate volume occupied by the solid phase (1s in the binary volume)
-    solid_volume = np.sum(binary_volume) * (voxel_size ** 3)
-
+    solid_volume = np.sum(binary_volume == 0, dtype=np.uint64) * (voxel_size ** 3)
+    print(f"Surface Area: {surface_area}")
+    print(f"Solid Volume: {solid_volume}")
     # Calculate specific surface area (SSA) as surface area divided by volume
     ssa = surface_area / solid_volume
     return ssa
 
-def estimate_permeability(porosity, csv_file, specific_surface_area, tortuosity=1.5):
+def estimate_permeability(porosity, k_constant, csv_file, specific_surface_area, tortuosity=1.5):
     """
     Estimate permeability using the Kozeny-Carman equation.
     
@@ -213,7 +218,7 @@ def estimate_permeability(porosity, csv_file, specific_surface_area, tortuosity=
     - permeability: The estimated permeability.
     """
     # Kozeny-Carman constant, typically around 5 for packed spheres
-    k = 5
+    k = k_constant
     
     # Kozeny-Carman equation for permeability
     permeability = (porosity**3) / (k * tortuosity**2 * (1 - porosity)**2 * specific_surface_area**2)
@@ -234,7 +239,7 @@ def calculate_solid_surface_ratio(binary_image_3d,csv_file, side,gdl=1):
         first_layer = binary_image_3d[-1, :, :]  # Bottom slice
     
     h,w = first_layer.shape
-    print(first_layer.shape)
+    #print(first_layer.shape)
     total_px = h*w
 
     white_px = np.sum(first_layer == 1)
@@ -288,7 +293,7 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         
         # Sum along the height and width (axes 1 and 2) to get the number of GDL voxels per slice (along the Z-axis)
         thickness_along_z = np.sum(gdl_mask, axis=(1, 2))
-        print('thickness_along_z (GDL) ', thickness_along_z)
+        #print('thickness_along_z (GDL) ', thickness_along_z)
         
         # Non-zero thickness is the region where the layer is present
         non_zero_slices = np.where(thickness_along_z > 0)[0]
@@ -306,7 +311,7 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
             writer.writerow(['##### MPL/GDL Thicknesses #####'])
             writer.writerow(['GDL_thickness', max_gdl_thickness])
             writer.writerow(['MPL_thickness', mpl_thickness])
-        return mpl_thickness, gdl_thickness
+        return
 
 def MPL_crack_analysis(mpl_layer, case_name, csv_file, mpl=2, slice_idx=0, from_top=True, voxel_size=5):
     """
@@ -523,7 +528,7 @@ def MPL_intrusion_roughness(volume, csv_file, mpl, voxel_size=5, region_size=10,
     # Calculate the average thickness of the MPL along the Z-axis
     mpl_thickness = np.sum(mpl_volume, axis=0)  # Sum along the Z-axis
     avg_thickness = int(np.mean(mpl_thickness))
-    print('mpl Thickness',avg_thickness)
+    print('mpl Thickness',avg_thickness*voxel_size)
     # Focus on the surface facing the GDL
     if from_top:
         surface_slice = np.max(np.where(mpl_volume == 1)[0])  # Bottom surface if MPL is on top
@@ -543,7 +548,7 @@ def MPL_intrusion_roughness(volume, csv_file, mpl, voxel_size=5, region_size=10,
     visualize_volume(filled_mpl_volume, case, False)
     # Extract the surface using marching cubes
     verts, faces, _, _ = marching_cubes(filled_mpl_volume, level=0)
-
+    visualize_isosurface_pyvista(verts, faces)
     # Calculate the global roughness (Ra, Rq) for the relevant surface
     Ra, Rq = calculate_surface_roughness_from_surface(filled_mpl_volume, voxel_size)
 

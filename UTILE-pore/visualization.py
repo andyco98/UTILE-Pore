@@ -61,6 +61,16 @@ def visualize_volume(volume, case_name, capture = False):
     render_window_interactor = vtk.vtkRenderWindowInteractor()
     render_window_interactor.SetRenderWindow(render_window)
 
+    # Add a 3D orientation marker (XYZ axes in the corner)
+    axes = vtk.vtkAxesActor()
+    axes.SetTotalLength(volume.shape)  # Set length of the axes
+    axes_widget = vtk.vtkOrientationMarkerWidget()
+    axes_widget.SetOrientationMarker(axes)
+    axes_widget.SetInteractor(render_window_interactor)
+    axes_widget.SetViewport(0.0, 0.0, 0.2, 0.2)  # Position the widget in the corner
+    axes_widget.EnabledOn()
+    axes_widget.InteractiveOn()
+
     if capture == True:
             volume_dims = vtk_volume.GetMapper().GetInput().GetDimensions()
             capture_frames(render_window, renderer, case_name, volume_dims, num_frames=360)

@@ -13,7 +13,6 @@ import openpnm as op
 from skimage import io
 import pickle
 
-
 #TODO 
 
 def crop_3d_array(array, target_shape):
@@ -548,7 +547,7 @@ def MPL_intrusion_roughness(volume, csv_file, mpl, voxel_size=5, region_size=10,
     visualize_volume(filled_mpl_volume, case, False)
     # Extract the surface using marching cubes
     verts, faces, _, _ = marching_cubes(filled_mpl_volume, level=0)
-    visualize_isosurface_pyvista(verts, faces)
+
     # Calculate the global roughness (Ra, Rq) for the relevant surface
     Ra, Rq = calculate_surface_roughness_from_surface(filled_mpl_volume, voxel_size)
 

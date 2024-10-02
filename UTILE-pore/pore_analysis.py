@@ -202,6 +202,7 @@ def calculate_ssa(binary_volume, voxel_size=5):
     print(f"Solid Volume: {solid_volume}")
     # Calculate specific surface area (SSA) as surface area divided by volume
     ssa = surface_area / solid_volume
+    print(ssa, ' μm^-1')
     return ssa
 
 def estimate_permeability(porosity, k_constant, csv_file, specific_surface_area, tortuosity=1.5):
@@ -227,7 +228,7 @@ def estimate_permeability(porosity, k_constant, csv_file, specific_surface_area,
         
         # Write porosity
         writer.writerow(['##### Estimated Permeability Kozeny-Carman #####'])
-        writer.writerow(['Permeability', permeability])
+        writer.writerow(['Permeability', permeability, 'μm^2'])
     return permeability
 
 def calculate_solid_surface_ratio(binary_image_3d,csv_file, side,gdl=1):
@@ -256,7 +257,7 @@ def calculate_solid_surface_ratio(binary_image_3d,csv_file, side,gdl=1):
 def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
     if len(np.unique(volume)) == 2:
         thickness = len(volume[0])
-        print('GDL thickness: ', thickness)
+        print('GDL thickness: ', thickness, ' voxels')
         return thickness
     else:
         # Find the positions of the mpl in the 3D volume
@@ -277,12 +278,12 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         mpl_volume = np.where(volume==2, 1,0)
         mpl_thickness = np.sum(mpl_volume, axis=0)  # Sum along the Z-axis
         mpl_avg_thickness = int(np.mean(mpl_thickness))
-        print('MPL avg Thickness',mpl_avg_thickness)       
+        print('MPL avg Thickness',mpl_avg_thickness, ' voxels')       
 
         gdl_volume = np.where(volume==1, 1,0)
         gdl_thickness = np.sum(gdl_volume, axis=0)  # Sum along the Z-axis
         gdl_avg_thickness = int(np.mean(gdl_thickness))
-        print('GDL avg Thickness',gdl_avg_thickness)
+        print('GDL avg Thickness',gdl_avg_thickness, ' voxels')
 
         # Calculate MPL thickness as the number of slices where the layer is present
         mpl_thickness = (non_zero_slices[-1] - non_zero_slices[0] + 1)* voxel_size
@@ -302,7 +303,7 @@ def MPL_GDL_thickness(volume, csv_file, axis=0, mpl=2, gdl=1, voxel_size=5):
         
         # Calculate GDL thickness as the number of slices where the layer is present
         max_gdl_thickness = (non_zero_slices[-1] - non_zero_slices[0] + 1)* voxel_size
-        print('Max GDL Thickness', max_gdl_thickness, 'Max MPL Thickness', mpl_thickness)
+        print('Max GDL Thickness', max_gdl_thickness, ' microns', 'Max MPL Thickness', mpl_thickness, ' microns')
         with open(csv_file, 'a', newline='') as csvfile:
             writer = csv.writer(csvfile)
             
@@ -527,7 +528,7 @@ def MPL_intrusion_roughness(volume, csv_file, mpl, voxel_size=5, region_size=10,
     # Calculate the average thickness of the MPL along the Z-axis
     mpl_thickness = np.sum(mpl_volume, axis=0)  # Sum along the Z-axis
     avg_thickness = int(np.mean(mpl_thickness))
-    print('mpl Thickness',avg_thickness*voxel_size)
+    print('MPL Thickness',avg_thickness*voxel_size)
     # Focus on the surface facing the GDL
     if from_top:
         surface_slice = np.max(np.where(mpl_volume == 1)[0])  # Bottom surface if MPL is on top
@@ -565,7 +566,7 @@ def MPL_intrusion_roughness(volume, csv_file, mpl, voxel_size=5, region_size=10,
         writer.writerow(['Rq', Rq])
         writer.writerow(['Ra_std_dev', Ra_std_dev])
         writer.writerow(['Ra_coefficient_of_variation', Ra_coefficient_of_variation]) 
-        writer.writerow(['avg_thickness', avg_thickness])           
+        writer.writerow(['avg_thickness', avg_thickness*voxel_size])           
     return Ra, Rq, Ra_std_dev, Ra_coefficient_of_variation, avg_thickness
 
 def MPL_count_touching_voxels(volume, csv_file, mpl_class=2, fiber_class=1):

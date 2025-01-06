@@ -12,7 +12,7 @@ from visualization import *
 import openpnm as op
 from skimage import io
 import pickle
-
+from matplotlib.colors import ListedColormap
 #TODO 
 
 def crop_3d_array(array, target_shape):
@@ -154,11 +154,14 @@ def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_s
 
     # Plot the pore size distribution
     fig, ax = plt.subplots()
-    ax.plot(bin_centers * voxel_size, pdf, 'bo-', label=f'Pore Size Distribution\nAvg: {average_pore_size:.2f} µm\nSD: {std_deviation:.2f} µm')  # Scale x-axis to microns
-    ax.set_xlabel('Pore radius (microns)')
-    ax.set_ylabel('Frequency')
-    ax.set_title('Pore Size Distribution in 3D')
+    ax.plot(bin_centers * voxel_size, pdf, 'bo-', label=f'Pore Size Distribution\nAvg: {average_pore_size:.2f} µm\nSD: {std_deviation:.2f} µm', fontsize = 16)  # Scale x-axis to microns
+    ax.set_xlabel('Pore radius (microns)', fontsize = 20)
+    ax.set_ylabel('Frequency', fontsize = 20)
+    ax.set_title('Pore Size Distribution in 3D', fontsize = 20)
     ax.legend()
+    ax.yticks(fontsize=16)
+    ax.xticks(fontsize=16)
+    plt.tight_layout()
     plt.savefig(f'./{case_name}/psd_plot.png')
     plt.close(fig)  # Close the figure to avoid display issues in scripts
 
@@ -345,6 +348,14 @@ def MPL_crack_analysis(mpl_layer, case_name, csv_file, mpl=2, slice_idx=0, from_
     crack_ratio = 1 - (white_px / total_px)  # Ratio of crack area to total area
 
     # Analyze cracks in the selected slice (0 corresponds to cracks/pore spaces)
+    crack_mask = np.where(slice_image == 0, 255, 0).astype(np.uint8)
+# Crack ratio calculation
+    h, w = slice_image.shape
+    total_px = h * w
+    white_px = np.sum(slice_image == 1)
+    crack_ratio = 1 - (white_px / total_px)  # Ratio of crack area to total area
+
+    # Analyze cracks in the selected slice (0 corresponds to cracks/pore spaces)
     crack_labels = measure.label(slice_image == 0, connectivity=2)  # 2D connectivity
     crack_count = np.max(crack_labels)  # Number of cracks
     
@@ -360,15 +371,17 @@ def MPL_crack_analysis(mpl_layer, case_name, csv_file, mpl=2, slice_idx=0, from_
     min_bin = np.log10(min(crack_sizes))  # Minimum value for log scale
     max_bin = np.log10(max(crack_sizes))  # Maximum value for log scale
     bins = np.logspace(min_bin, max_bin, num=20)  # Create 20 bins spaced logarithmically
-    
     # Plot the crack size distribution (PSD)
     plt.figure()
     plt.hist(crack_sizes, bins=bins, edgecolor='black')
     plt.xscale('log')
-    plt.title("Crack Size Distribution")
-    plt.xlabel("Crack Area (microns^2)")
-    plt.ylabel("Frequency")
+    plt.title("Crack Size Distribution", fontsize = 20)
+    plt.xlabel("Crack Area (microns^2)", fontsize = 20)
+    plt.ylabel("Frequency", fontsize = 20)
+    plt.yticks(fontsize=16)
+    plt.xticks(fontsize=16)
     plt.grid(True)
+    plt.tight_layout()
     plt.savefig(f'./{case_name}/crack_size_distirbution.png')
     plt.close()
 
@@ -385,13 +398,18 @@ def plot_crack_labels(slice_image, case_name, crack_labels):
     """
     Plots the crack labels on the slice for visualization.
     """
+    slice_image = np.where(slice_image == 0, 0, 255).astype(np.uint8)
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    ax[0].imshow(slice_image, cmap='gray')
-    ax[0].set_title("MPL Layer Slice")
-    
-    ax[1].imshow(crack_labels, cmap='nipy_spectral')
-    ax[1].set_title("Cracks Labeled")
-    
+    ax[0].imshow(slice_image, cmap='gray',interpolation="nearest")
+    ax[0].set_title("MPL Layer Slice", fontsize=20)
+    ax[0].axis('off')
+    max_label = crack_labels.max()
+    color_array = np.random.rand(max_label+1, 3)
+    color_array[0] = [0, 0, 0]  # label=0 -> black
+    cmap = ListedColormap(color_array)
+    ax[1].imshow(crack_labels, cmap=cmap,interpolation="nearest")
+    ax[1].set_title("Cracks Labeled", fontsize=20)
+    plt.tight_layout()
     plt.savefig(f'./{case_name}/mpl_cracks_map.png')
     plt.close(fig)
 

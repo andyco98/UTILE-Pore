@@ -154,13 +154,12 @@ def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_s
 
     # Plot the pore size distribution
     fig, ax = plt.subplots()
-    ax.plot(bin_centers * voxel_size, pdf, 'bo-', label=f'Pore Size Distribution\nAvg: {average_pore_size:.2f} µm\nSD: {std_deviation:.2f} µm', fontsize = 16)  # Scale x-axis to microns
+    ax.plot(bin_centers * voxel_size, pdf, 'bo-', label=f'Pore Size Distribution\nAvg: {average_pore_size:.2f} µm\nSD: {std_deviation:.2f} µm')  # Scale x-axis to microns
     ax.set_xlabel('Pore radius (microns)', fontsize = 20)
     ax.set_ylabel('Frequency', fontsize = 20)
     ax.set_title('Pore Size Distribution in 3D', fontsize = 20)
-    ax.legend()
-    ax.yticks(fontsize=16)
-    ax.xticks(fontsize=16)
+    ax.legend(fontsize=16)
+    
     plt.tight_layout()
     plt.savefig(f'./{case_name}/psd_plot.png')
     plt.close(fig)  # Close the figure to avoid display issues in scripts
@@ -376,8 +375,8 @@ def MPL_crack_analysis(mpl_layer, case_name, csv_file, mpl=2, slice_idx=0, from_
     plt.hist(crack_sizes, bins=bins, edgecolor='black')
     plt.xscale('log')
     plt.title("Crack Size Distribution", fontsize = 20)
-    plt.xlabel("Crack Area (microns^2)", fontsize = 20)
-    plt.ylabel("Frequency", fontsize = 20)
+    plt.xlabel("Crack Area [µm^2]", fontsize = 20)
+    plt.ylabel("Frequency [%]", fontsize = 20)
     plt.yticks(fontsize=16)
     plt.xticks(fontsize=16)
     plt.grid(True)

@@ -13,6 +13,7 @@ import openpnm as op
 from skimage import io
 import pickle
 from matplotlib.colors import ListedColormap
+from matplotlib.ticker import FormatStrFormatter
 #TODO 
 
 def crop_3d_array(array, target_shape):
@@ -124,9 +125,9 @@ def calculate_porosity(binary_stack):
     porosity = black_pixels / total_pixels
     return porosity
 
-def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_size parameter with a default of 5 microns
-    if len(np.unique(filepath)) > 2:
-       filepath[filepath == 2] = 0
+def calculate_psd(filepath, csv_file, case_name, voxel_size= 1):  # Added voxel_size parameter with a default of 5 microns
+    #if len(np.unique(filepath)) > 2:
+       #filepath[filepath == 2] = 0
     porosity = calculate_porosity(filepath)
     #print(f"Porosity wb: {porosity}")
     # Ensure the image is binary
@@ -134,10 +135,12 @@ def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_s
     #porosity = ps.metrics.porosity(binary_image_3d)
     print(f"Porosity: {porosity}")
 
-    sizes = ps.filters.porosimetry(im=binary_image_3d)
+    sizes = ps.filters.local_thickness(im=binary_image_3d)
     print(f"Sizes shape: {sizes.shape}")
+    prf = ps.metrics.porosity_profile(binary_image_3d)
+    
 
-    results = ps.metrics.pore_size_distribution(sizes)
+    results = ps.metrics.pore_size_distribution(sizes, log=False)
     print("Results:", results)
 
     bin_centers = results['bin_centers']
@@ -146,23 +149,30 @@ def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_s
     norm_pdf = pdf/ np.sum(pdf)
     # Calculate average and standard deviation using the PDF and bin centers
     average_pore_size = np.sum(bin_centers * norm_pdf) * voxel_size  # Scale to microns
-    variance = np.sum((bin_centers * voxel_size - average_pore_size)**2 * pdf)  # Scale variance to microns^2
+    variance = np.sum((bin_centers * voxel_size - average_pore_size)**2 * norm_pdf)  # Scale variance to microns^2
     std_deviation = np.sqrt(variance)
 
-    print(f"Average Pore Size (microns): {average_pore_size}")
-    print(f"Standard Deviation (microns): {std_deviation}")
+    print(f"Average Pore Size (voxels): {average_pore_size}")
+    print(f"Standard Deviation (voxels): {std_deviation}")
 
     # Plot the pore size distribution
-    fig, ax = plt.subplots()
-    ax.plot(bin_centers * voxel_size, pdf, 'bo-', label=f'Pore Size Distribution\nAvg: {average_pore_size:.2f} µm\nSD: {std_deviation:.2f} µm', fontsize = 16)  # Scale x-axis to microns
-    ax.set_xlabel('Pore radius (microns)', fontsize = 20)
-    ax.set_ylabel('Frequency', fontsize = 20)
-    ax.set_title('Pore Size Distribution in 3D', fontsize = 20)
-    ax.legend()
-    ax.yticks(fontsize=16)
-    ax.xticks(fontsize=16)
+    fig, (ax1, ax2)  = plt.subplots(1,2, figsize=(16, 8))
+    ax2.plot(bin_centers * voxel_size, pdf, 'bo-', label=f'Avg: {average_pore_size:.2f} voxels\nSD: {std_deviation:.2f} voxels')  # Scale x-axis to microns
+    ax2.set_xlabel('Pore radius (voxels)', fontsize = 25)
+    ax2.set_ylabel('Frequency', fontsize = 25)
+    ax2.set_title('Pore Size Distribution', fontsize = 25)
+    ax2.legend(fontsize = 20)
+    ax2.tick_params(axis='both', labelsize=22)
+    
+    ax1.plot(prf, 'b.-')
+    ax1.set_xlabel('Slice Number', fontsize = 25)
+    ax1.set_ylabel('Porosity', fontsize = 25)
+    ax1.set_title('Porosity Profile', fontsize = 25)
+    ax1.tick_params(axis='both', labelsize=22)
+    ax1.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    
     plt.tight_layout()
-    plt.savefig(f'./{case_name}/psd_plot.png')
+    plt.savefig(f'./{case_name}/porosity_plot.png')
     plt.close(fig)  # Close the figure to avoid display issues in scripts
 
     with open(csv_file, 'a', newline='') as csvfile:
@@ -175,6 +185,33 @@ def calculate_psd(filepath, csv_file, case_name, voxel_size=5):  # Added voxel_s
         writer.writerow(['Standrad_Deviation', std_deviation])
 
     return porosity, results, average_pore_size, std_deviation
+
+def cross_section_view(volume, case_name):
+    class2_mask = (volume == 2)  # Binary mask: 1 where Class 2, 0 elsewhere
+    thickness_map = np.sum(class2_mask, axis=(0))
+    # Get the Y and X index of the thickest spot
+    max_y_index, max_x_index = np.unravel_index(np.argmax(thickness_map), thickness_map.shape)
+
+    print(f"Max Class 2 thickness at X={max_x_index}, Y={max_y_index}")
+    yz_slice = volume[:,:,max_x_index]
+    from matplotlib.colors import ListedColormap
+ 
+    # Define RGB colors for each class (Class 0, 1, 2)
+    colors = [
+        (1.0, 1.0, 0.0),  # Class 0: Yellow
+        (1.0, 0.0, 0.0),  # Class 1: Red
+        (0.0, 0.0, 1.0)   # Class 2: Blue
+    ]
+ 
+    custom_cmap = ListedColormap(colors)
+    plt.figure(figsize=(8, 8))
+    plt.imshow(yz_slice.T, cmap=custom_cmap, origin='lower', interpolation='none')  # .T flips to (Y,Z)
+    plt.title(f'YZ Cross-Section at X = {max_x_index} (Max Class 2)', fontsize=16)
+    plt.xlabel('Z (slices)', fontsize=14)
+    plt.ylabel('Y (pixels)', fontsize=14)
+    plt.colorbar(ticks=[0, 1, 2], label='Class')
+    plt.clim(-0.5, 2.5)  # Ensures all classes map correctly
+    plt.show()
 
 def calculate_ssa(binary_volume, voxel_size=5):
     """
@@ -476,7 +513,7 @@ def layer_pore_size_distribution(volume, gdl, visualize=False,voxel_size=5):
     print('Global mean pore size (in square microns):', mean_global)
     print('Global standard deviation of pore size (in square microns):', sd_global) 
 
-def MPL_heatmap(volume,case_name, mpl):
+'''def MPL_heatmap(volume,case_name, mpl):
     # First lets do a heatmap wit the MPL surface
     mpl_volume = np.where(volume == mpl, 1, 0)
 
@@ -487,6 +524,32 @@ def MPL_heatmap(volume,case_name, mpl):
     ax.set_title('XY Plane Density')
     ax.tick_params(left = False, right = False , labelleft = False , 
                 labelbottom = False, bottom = False)
+    plt.savefig(f'./{case_name}/mpl_heatmap.png')
+    plt.close(fig)'''
+
+def MPL_heatmap(volume, case_name, mpl):
+    # Create a binary volume: 1 where volume equals mpl, 0 elsewhere
+    mpl_volume = np.where(volume == mpl, 1, 0)
+
+    # Sum along the first axis to obtain the XY density (real values)
+    xy_density = np.sum(mpl_volume, axis=0)
+
+    # Create the figure and axis
+    fig, ax = plt.subplots()
+
+    # Display the heatmap using the real values
+    im = ax.imshow(xy_density, cmap='jet')
+    
+    ax.set_title('XY Plane Density')
+    ax.tick_params(left=False, right=False, labelleft=False,
+                   labelbottom=False, bottom=False)
+    
+    # Add a colorbar that reflects the real (unnormalized) values
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label('Count', fontsize=16)
+    cbar.ax.tick_params(labelsize=16)
+    
+    # Save and close the figure
     plt.savefig(f'./{case_name}/mpl_heatmap.png')
     plt.close(fig)
 
@@ -694,18 +757,19 @@ def tortuosity_simulation(binary_volume, csv_file):
     return tortuosity
 
 # ######## TEST FUNCTIONS  ########
-# filepath = 'C:/Users/a.colliard/Downloads/39bb2_HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras.tif'
+filepath = "C:/Users/andre/Downloads/39bb2_HRNET_HRNET_multi_fusev2_dataset_noaug_-0.6808-23.keras (1).tif"
 # predicted_volume = io.imread(filepath)
-# case_name = 'example1'
+case_name = 'Practice'
 # snow_network_from_image(predicted_volume, case_name)
 # #'C:/Users/a.colliard/Desktop/aimys_project/CT_crops/new/totake/Toray1202.tif'
 # #'C:/Users/a.colliard/Downloads/toray1202_fusev2_HRNET_HRNET_fusev2_dataset_noaug_-0.6439-55.keras.tif'
 
-# csv_file = './functions/csv_test.csv'
-# binary_image_3d = open_tiff_stack(filepath)
-# output_csv_path = './functions/test_csv.csv'
-# # Calculate porosity, psd and binary img
-# porosity,results, avg_pore, sd = calculate_psd(binary_image_3d, csv_file, voxel_size=5)
+csv_file = './csv_test.csv'
+binary_image_3d = open_tiff_stack(filepath)
+output_csv_path = './test_csv.csv'
+# Calculate porosity, psd and binary img
+#porosity,results, avg_pore, sd = calculate_psd(binary_image_3d, csv_file, case_name, voxel_size=1)
+cross_section_view(binary_image_3d, case_name)
 
 # # Calculate surface roughness
 # Ra, Rq = calculate_surface_roughness_from_surface(binary_image_3d)
